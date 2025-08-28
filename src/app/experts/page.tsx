@@ -47,6 +47,7 @@ export default async function ExpertsPage() {
                 width={80}
                 height={80}
                 className="rounded-full border-2 border-green-400"
+                unoptimized
               />
               <div>
                 <h2 className="text-lg font-semibold">

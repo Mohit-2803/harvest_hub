@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import Footer from "@/components/footer";
 import { CartCountProvider } from "./context/CartProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default function RootLayout({
               closeButton
               duration={3500}
             />
+            <Analytics />
           </CartCountProvider>
         </AuthProvider>
       </body>
