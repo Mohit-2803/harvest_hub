@@ -10,10 +10,11 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "randomuser.me",
-        pathname: "/api/**",
+        pathname: "/**",
       },
     ],
   },
+
   eslint: {
     ignoreDuringBuilds: true,
   },
