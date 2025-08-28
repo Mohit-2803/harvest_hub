@@ -58,16 +58,24 @@ harvest-hub
 │  │  │  │  └─ page.tsx
 │  │  │  └─ register
 │  │  │     └─ page.tsx
+│  │  ├─ about
+│  │  │  └─ page.tsx
 │  │  ├─ actions
 │  │  │  ├─ customer-actions
 │  │  │  │  └─ actions.ts
 │  │  │  └─ farmer-actions
 │  │  │     └─ actions.ts
 │  │  ├─ api
-│  │  │  └─ auth
-│  │  │     ├─ register
-│  │  │     │  └─ route.ts
-│  │  │     └─ [...nextauth]
+│  │  │  ├─ auth
+│  │  │  │  ├─ register
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ [...nextauth]
+│  │  │  │     └─ route.ts
+│  │  │  ├─ orders
+│  │  │  │  └─ checkout
+│  │  │  │     └─ route.ts
+│  │  │  └─ stripe
+│  │  │     └─ webhook
 │  │  │        └─ route.ts
 │  │  ├─ context
 │  │  │  └─ AuthProvider.tsx
@@ -76,12 +84,16 @@ harvest-hub
 │  │  │  │  ├─ CustomerDashboard.tsx
 │  │  │  │  └─ page.tsx
 │  │  │  ├─ marketplace
+│  │  │  │  ├─ AddToCartButton.tsx
 │  │  │  │  ├─ MarketPlace.tsx
 │  │  │  │  ├─ page.tsx
 │  │  │  │  └─ products
 │  │  │  │     └─ [id]
+│  │  │  │        ├─ OrderButton.tsx
 │  │  │  │        ├─ page.tsx
-│  │  │  │        └─ ProductInfo.tsx
+│  │  │  │        └─ productInfo.tsx
+│  │  │  ├─ orders
+│  │  │  │  └─ page.tsx
 │  │  │  └─ profile
 │  │  │     ├─ CustomerProfile.tsx
 │  │  │     └─ page.tsx
@@ -135,6 +147,7 @@ harvest-hub
 │  │  ├─ auth.ts
 │  │  ├─ cloudinary.ts
 │  │  ├─ prisma.ts
+│  │  ├─ stripe.ts
 │  │  ├─ utils.ts
 │  │  └─ validation.ts
 │  ├─ middleware.ts
@@ -167,6 +180,10 @@ harvest-hub
 │     │     └─ wasm.js
 │     ├─ migrations
 │     │  ├─ 20250826084457_new_migarte
+│     │  │  └─ migration.sql
+│     │  ├─ 20250827111152_stripe
+│     │  │  └─ migration.sql
+│     │  ├─ 20250827112132_stripe
 │     │  │  └─ migration.sql
 │     │  └─ migration_lock.toml
 │     └─ schema.prisma

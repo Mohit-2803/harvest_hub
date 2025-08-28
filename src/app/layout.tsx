@@ -5,6 +5,7 @@ import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import Footer from "@/components/footer";
+import { CartCountProvider } from "./context/CartProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,15 +36,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <Navbar />
-          {children}
-          <Footer />
-          <Toaster
-            position="top-right"
-            richColors
-            closeButton
-            duration={3500}
-          />
+          <CartCountProvider>
+            <Navbar />
+            {children}
+            <Footer />
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              duration={3500}
+            />
+          </CartCountProvider>
         </AuthProvider>
       </body>
     </html>

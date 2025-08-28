@@ -43,7 +43,7 @@ export async function getLatestAddedFarmProducts() {
         },
       },
     },
-    take: 5,
+    take: 10,
   });
 
   return products;

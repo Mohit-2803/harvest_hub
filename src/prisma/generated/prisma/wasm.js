@@ -180,6 +180,8 @@ exports.Prisma.OrderScalarFieldEnum = {
   customerId: 'customerId',
   totalAmount: 'totalAmount',
   status: 'status',
+  stripeSessionId: 'stripeSessionId',
+  stripePaymentIntentId: 'stripePaymentIntentId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -189,6 +191,22 @@ exports.Prisma.OrderItemScalarFieldEnum = {
   orderId: 'orderId',
   productId: 'productId',
   quantity: 'quantity'
+};
+
+exports.Prisma.CartScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CartItemScalarFieldEnum = {
+  id: 'id',
+  cartId: 'cartId',
+  productId: 'productId',
+  quantity: 'quantity',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -226,7 +244,9 @@ exports.Prisma.ModelName = {
   VerificationToken: 'VerificationToken',
   Product: 'Product',
   Order: 'Order',
-  OrderItem: 'OrderItem'
+  OrderItem: 'OrderItem',
+  Cart: 'Cart',
+  CartItem: 'CartItem'
 };
 
 /**

@@ -22,11 +22,18 @@ export default async function ManageInventory() {
   const products = result.data;
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 min-h-screen">
       <h1 className="text-3xl font-bold mb-6">Manage Inventory</h1>
 
       {products.length === 0 ? (
-        <p className="text-gray-500">No products added yet.</p>
+        <div>
+          <p className="text-gray-500">No products found. Add some products!</p>
+          <Link href="/farmer/add-product">
+            <Button className="mt-4 cursor-pointer" variant="outline">
+              Add Product
+            </Button>
+          </Link>
+        </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (

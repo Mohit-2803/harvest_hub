@@ -1,17 +1,20 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cancelOrder } from "@/app/actions/customer-actions/actions";
-import prisma from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
+import CancelOrderButton from "./CancelOrderButton";
 
 export default async function CustomerOrdersPage() {
   const session = await getServerSession(authOptions);
+
   if (!session?.user?.id) {
     return (
       <div className="mx-auto max-w-5xl p-6">
-        <div className="rounded-xl border bg-white p-6 text-center shadow-sm">
+        <div className="rounded-xl border bg-white p-6 text-center shadow-md">
           <p className="text-gray-600">Please login to view your orders.</p>
         </div>
       </div>
@@ -20,17 +23,12 @@ export default async function CustomerOrdersPage() {
 
   const orders = await prisma.order.findMany({
     where: { customerId: session.user.id },
-    include: {
-      orderItems: {
-        include: { product: true },
-      },
-    },
+    include: { orderItems: { include: { product: true } } },
     orderBy: { createdAt: "desc" },
   });
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      {/* Header */}
+    <div className="mx-auto max-w-5xl p-6 min-h-screen">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
           My Orders
@@ -41,69 +39,105 @@ export default async function CustomerOrdersPage() {
       </div>
 
       {orders.length === 0 && (
-        <div className="rounded-xl border bg-white p-10 text-center text-gray-500 shadow-sm">
-          No orders found.
+        <div className="rounded-xl border font-semibold bg-white p-10 text-center text-gray-500 shadow-sm">
+          <p>No orders found.</p>
+          <Link href="/customer/marketplace">
+            <Button variant="outline" className="mt-4 cursor-pointer">
+              Browse Marketplace
+            </Button>
+          </Link>
         </div>
       )}
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         {orders.map((order) => {
-          const created = order.createdAt.toDateString();
-          const totalStr = order.totalAmount.toString();
-          const isPending = order.status === "PENDING";
-          const isCancelled = order.status === "CANCELLED";
+          const created = order.createdAt.toLocaleDateString();
+          const totalStr = order.totalAmount.toFixed(2);
 
-          const statusClass = isPending
-            ? "bg-yellow-100 text-yellow-800 ring-yellow-200"
-            : isCancelled
-            ? "bg-red-100 text-red-800 ring-red-200"
-            : "bg-emerald-100 text-emerald-800 ring-emerald-200";
+          let statusClass = "";
+          let statusLabel = "";
 
-          const statusLabel = isPending
-            ? "Pending"
-            : isCancelled
-            ? "Cancelled"
-            : "Completed";
+          switch (order.status) {
+            case "PENDING":
+              statusClass = "bg-yellow-100 text-yellow-800";
+              statusLabel = "Pending";
+              break;
+            case "PAID":
+              statusClass = "bg-blue-100 text-blue-800";
+              statusLabel = "Paid";
+              break;
+            case "SHIPPED":
+              statusClass = "bg-purple-100 text-purple-800";
+              statusLabel = "Shipped";
+              break;
+            case "DELIVERED":
+              statusClass = "bg-emerald-100 text-emerald-800";
+              statusLabel = "Delivered";
+              break;
+            case "CANCELLED":
+              statusClass = "bg-red-100 text-red-800";
+              statusLabel = "Cancelled";
+              break;
+            default:
+              statusClass = "bg-gray-100 text-gray-800";
+              statusLabel = order.status;
+          }
 
           return (
-            <Card key={order.id} className="overflow-hidden">
+            <Card
+              key={order.id}
+              className="overflow-hidden shadow-md hover:shadow-lg transition-all"
+            >
               <CardHeader className="flex flex-row items-center justify-between gap-3">
                 <CardTitle className="text-base font-semibold text-gray-900">
-                  <span className="text-gray-500">Order</span> #{order.id}
+                  <span className="text-gray-500">Order ID -</span> #{order.id}
                 </CardTitle>
                 <Badge className={statusClass}>{statusLabel}</Badge>
               </CardHeader>
 
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5 pt-4">
+                {/* Order Summary */}
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs text-gray-500">Placed on</p>
+                  <div className="rounded-lg bg-gray-100 p-3">
+                    <p className="text-xs font-medium text-gray-500">
+                      Placed On
+                    </p>
                     <p className="text-sm font-medium text-gray-800">
                       {created}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs text-gray-500">Total</p>
+                  <div className="rounded-lg bg-gray-100 p-3">
+                    <p className="text-xs font-medium text-gray-500">Total</p>
                     <p className="text-sm font-semibold text-gray-900">
                       ₹{totalStr}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs text-gray-500">Items</p>
+                  <div className="rounded-lg bg-gray-100 p-3">
+                    <p className="text-xs font-medium text-gray-500">Items</p>
                     <p className="text-sm font-medium text-gray-800">
                       {order.orderItems.length}
                     </p>
                   </div>
                 </div>
 
-                <div className="rounded-lg border">
-                  <div className="divide-y">
-                    {order.orderItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between px-4 py-3"
-                      >
-                        <div className="min-w-0">
+                {/* Items */}
+                <div className="rounded-lg border divide-y">
+                  {order.orderItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-4"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border">
+                          <Image
+                            src={item.product.image || "/placeholder.png"}
+                            alt={item.product.name}
+                            width={48}
+                            height={48}
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
                           <p className="truncate text-sm font-medium text-gray-900">
                             {item.product.name}
                           </p>
@@ -112,20 +146,17 @@ export default async function CustomerOrdersPage() {
                           </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        ₹{item.product.price.toString()}
+                      </p>
+                    </div>
+                  ))}
                 </div>
 
-                {isPending && (
+                {/* Cancel Button */}
+                {order.status !== "DELIVERED" && (
                   <div className="flex justify-end">
-                    <form
-                      action={async () => {
-                        "use server";
-                        await cancelOrder(order.id);
-                      }}
-                    >
-                      <Button variant="destructive">Cancel Order</Button>
-                    </form>
+                    <CancelOrderButton orderId={order.id} />
                   </div>
                 )}
               </CardContent>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Spinner from "@/components/Spinner";
 
 export default function HomePage() {
   const { user, isLoading } = useAuth();
@@ -12,7 +13,7 @@ export default function HomePage() {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-lg text-muted-foreground">Loading...</p>
+        <Spinner />
       </div>
     );
   }

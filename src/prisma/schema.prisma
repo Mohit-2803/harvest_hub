@@ -1,9 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
   output   = "generated/prisma"
@@ -21,19 +16,17 @@ model User {
   password      String?
   image         String?
   emailVerified DateTime?
+  role          Role      @default(CUSTOMER)
+  farmName      String?
+  farmLocation  String?
 
-  // Role-based access control
-  role Role @default(CUSTOMER)
-
-  // Farmer-specific role 
-  farmName     String?
-  farmLocation String?
-
-  // Relationships
   accounts Account[]
   sessions Session[]
   products Product[]
   orders   Order[]
+
+  // Back-relation for carts
+  carts Cart[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -87,7 +80,9 @@ model Product {
   farmerId String
   farmer   User   @relation(fields: [farmerId], references: [id])
 
-  orders OrderItem[]
+  orders    OrderItem[]
+  // Back-relation for cart items
+  cartItems CartItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -98,9 +93,11 @@ model Order {
   customerId String
   customer   User   @relation(fields: [customerId], references: [id])
 
-  orderItems  OrderItem[]
-  totalAmount Decimal
-  status      orderStatus @default(PENDING)
+  orderItems            OrderItem[]
+  totalAmount           Decimal
+  status                orderStatus @default(PENDING)
+  stripeSessionId       String      @default("")
+  stripePaymentIntentId String      @default("")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -114,6 +111,35 @@ model OrderItem {
 
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
+}
+
+model Cart {
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  items CartItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model CartItem {
+  id        String @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int    @default(1)
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId]) // one line per product
+  @@index([productId])
 }
 
 enum Role {

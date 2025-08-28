@@ -1,8 +1,10 @@
-// src/app/customer/marketplace/products/[id]/ProductInfo.tsx
 import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import OrderButton from "./OrderButton";
+import { formatCurrency } from "@/lib/formatCurrency";
+import { AddToCartButton } from "../../AddToCartButton";
+import { Badge } from "@/components/ui/badge";
 
 export default async function ProductInfoPage({
   params,
@@ -15,7 +17,6 @@ export default async function ProductInfoPage({
   });
   if (!product) return notFound();
 
-  const priceStr = product.price.toString();
   const imageSrc = product.image || "/file.svg";
   const alt = product.name ? `${product.name} product photo` : "Product photo";
 
@@ -42,10 +43,22 @@ export default async function ProductInfoPage({
             </h1>
 
             <div className="flex items-baseline gap-2">
-              <span className="text-xl text-gray-500">Price</span>
-              <span className="text-2xl text-green-700 font-bold tracking-tight">
-                ₹{priceStr}
-              </span>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-row items-center gap-1">
+                  <span className="text-xl text-gray-500">Price -</span>
+                  <span className="text-xl text-green-700 font-semibold tracking-tight">
+                    {formatCurrency(Number(product.price))}
+                  </span>
+                  <span className="text-sm text-gray-500">per unit</span>
+                </div>
+                <span>
+                  <span className="text-lg text-gray-500">In stock - </span>
+                  <span className="text-lg text-green-700 tracking-tight">
+                    {product.quantity}{" "}
+                    <span className="text-gray-500 text-sm">units</span>
+                  </span>
+                </span>
+              </div>
             </div>
 
             <div className="rounded-lg bg-gray-50 p-4">
@@ -71,7 +84,10 @@ export default async function ProductInfoPage({
               </dl>
             </div>
 
-            <OrderButton productId={product.id} productName={product.name} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <AddToCartButton productId={product.id} />
+              <OrderButton productId={product.id} productName={product.name} />
+            </div>
           </div>
         </aside>
       </div>
@@ -81,20 +97,37 @@ export default async function ProductInfoPage({
         <h2 className="text-xl font-semibold text-gray-900">Details</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-800">Overview</h3>
-            <p className="mt-2 text-sm text-gray-600">
+            <h3 className="text-md font-semibold uppercase text-gray-500 tracking-wide">
+              Overview
+            </h3>
+            <p className="mt-2 text-sm font-medium text-gray-600">
               {product.description || "No additional description provided."}
             </p>
           </div>
 
           <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-800">Pricing</h3>
-            <p className="mt-2 text-sm text-gray-600">
+            <h3 className="text-md font-semibold uppercase text-gray-500 tracking-wide">
+              Pricing
+            </h3>
+            <p className="mt-2 text-sm font-medium text-gray-600">
               Transparent farm-direct pricing for this product.
             </p>
             <p className="mt-2 text-base font-semibold">
-              ₹{priceStr} per quantity
+              {formatCurrency(Number(product.price))} per quantity
             </p>
+          </div>
+
+          <div className="rounded-xl border bg-white p-6 shadow hover:shadow-md transition">
+            <h3 className="text-md font-semibold uppercase text-gray-500 tracking-wide">
+              Farmer Identity
+            </h3>
+            <p className="mt-3 text-sm font-medium text-gray-700">
+              Support local farming and sustainable agriculture by purchasing
+              directly from this farmer.
+            </p>
+            <Badge variant="secondary" className="mt-4">
+              Verified Farmer
+            </Badge>
           </div>
         </div>
       </section>

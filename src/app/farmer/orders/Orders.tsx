@@ -1,29 +1,27 @@
-import { Badge } from "@/components/ui/badge";
+// app/farmer/orders/page.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import prisma from "@/lib/prisma";
+import { getFarmerOrders } from "@/app/actions/farmer-actions/actions";
+import OrderRowClient from "./OrderRowClient";
 
 export default async function Orders() {
-  const orders = await prisma.order.findMany({
-    include: {
-      customer: true,
-      orderItems: {
-        include: {
-          product: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const orders = await getFarmerOrders();
+
+  // make objects serializable for client component (Dates -> strings)
+  const safeOrders = orders.map((o) => ({
+    ...o,
+    createdAt:
+      o.createdAt instanceof Date
+        ? o.createdAt.toISOString()
+        : String(o.createdAt),
+    totalAmount: o.totalAmount?.toString?.() ?? String(o.totalAmount ?? ""),
+  }));
 
   return (
     <div className="max-w-5xl mx-auto p-6 h-[80vh]">
@@ -32,7 +30,7 @@ export default async function Orders() {
           <CardTitle className="text-2xl font-bold">My Orders</CardTitle>
         </CardHeader>
         <CardContent>
-          {orders.length === 0 ? (
+          {safeOrders.length === 0 ? (
             <p className="text-gray-500">No orders yet.</p>
           ) : (
             <Table>
@@ -43,39 +41,12 @@ export default async function Orders() {
                   <TableHead>Status</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Update Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">
-                      {order.id.slice(0, 8)}...
-                    </TableCell>
-                    <TableCell>{order.customer.name || "Guest"}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.status === "PENDING"
-                            ? "secondary"
-                            : order.status === "SHIPPED"
-                            ? "outline"
-                            : order.status === "DELIVERED"
-                            ? "success"
-                            : order.status === "CANCELLED"
-                            ? "destructive"
-                            : "default"
-                        }
-                      >
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      ₹{order.totalAmount.toString()}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(order.createdAt).toLocaleDateString("en-IN")}
-                    </TableCell>
-                  </TableRow>
+                {safeOrders.map((order) => (
+                  <OrderRowClient key={order.id} order={order} />
                 ))}
               </TableBody>
             </Table>

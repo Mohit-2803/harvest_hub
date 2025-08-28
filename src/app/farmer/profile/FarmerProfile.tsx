@@ -11,7 +11,7 @@ export default async function FarmerProfilePage() {
 
   if (!session?.user?.id) {
     return (
-      <div className="flex flex-col items-center justify-center h-[80vh]">
+      <div className="flex flex-col items-center justify-center min-h-screen">
         <h2 className="text-xl font-semibold">Not Logged In</h2>
         <Link href="/sign-in">
           <Button className="mt-4">Sign In</Button>
@@ -30,16 +30,14 @@ export default async function FarmerProfilePage() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-[80vh]">
+      <div className="flex items-center justify-center min-h-screen">
         <p>User not found.</p>
       </div>
     );
   }
 
-  console.log(user);
-
   return (
-    <div className="container mx-auto max-w-3xl p-6">
+    <div className="container mx-auto max-w-3xl p-6 min-h-screen">
       <Card className="shadow-xl rounded-2xl">
         <CardHeader className="flex flex-col items-center text-center">
           <Avatar className="w-24 h-24 mb-4">

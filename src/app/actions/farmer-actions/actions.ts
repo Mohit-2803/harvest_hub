@@ -50,7 +50,7 @@ export async function addProduct(data: ProductFormValues) {
         farmerId: session.user.id,
       },
     });
-
+    revalidatePath("/farmer/manage-inventory");
     return { success: true };
   } catch (err) {
     console.error("Add product error:", err);
@@ -107,6 +107,7 @@ export async function farmerDashboardInfo() {
 
     const ordersCount = await prisma.order.count({
       where: {
+        status: { not: "DELIVERED" },
         orderItems: {
           some: {
             product: {
@@ -117,7 +118,19 @@ export async function farmerDashboardInfo() {
       },
     });
 
-    return { ok: true, data: { productsCount, ordersCount } };
+    const earningsAgg = await prisma.order.aggregate({
+      _sum: { totalAmount: true },
+      where: {
+        status: { in: ["DELIVERED"] },
+        orderItems: {
+          some: { product: { farmerId: session.user.id } },
+        },
+      },
+    });
+
+    const earnings = Number(earningsAgg._sum.totalAmount ?? 0);
+
+    return { ok: true, data: { productsCount, ordersCount, earnings } };
   } catch (err) {
     console.error("Farmer dashboard info error:", err);
     return { ok: false, error: "Failed to get dashboard info" };
@@ -162,4 +175,91 @@ export async function getFarmerRecentOrders() {
       amount: Number(item.product.price) * item.quantity,
     })),
   }));
+}
+
+export async function getFarmerOrders() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return [];
+
+    const farmerId = session.user.id;
+
+    const orders = await prisma.order.findMany({
+      where: {
+        orderItems: {
+          some: {
+            product: {
+              farmerId,
+            },
+          },
+        },
+      },
+      include: {
+        customer: true,
+        orderItems: {
+          include: {
+            product: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return orders;
+  } catch (err) {
+    console.error("Get farmer orders error:", err);
+    return [];
+  }
+}
+
+export async function updateOrderStatus(formData: FormData) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) throw new Error("Not authenticated");
+
+    const farmerId = session.user.id;
+    const orderId = String(formData.get("orderId") || "");
+    const status = String(formData.get("status") || "");
+
+    const allowed = ["PENDING", "PAID", "SHIPPED", "DELIVERED", "CANCELLED"];
+    if (!allowed.includes(status)) {
+      throw new Error("Invalid status");
+    }
+    if (!orderId) throw new Error("Missing orderId");
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        orderItems: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    if (!order) throw new Error("Order not found");
+
+    const belongsToFarmer = order.orderItems.some(
+      (item) => item.product.farmerId === farmerId
+    );
+
+    if (!belongsToFarmer) {
+      throw new Error("You are not authorized to update this order");
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: status as import("@/prisma/generated/prisma").orderStatus,
+      },
+    });
+
+    revalidatePath("/farmer/orders");
+
+    return { ok: true };
+  } catch (err) {
+    console.error("Update order status error:", err);
+    throw err;
+  }
 }

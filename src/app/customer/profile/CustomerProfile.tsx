@@ -36,8 +36,6 @@ export default async function CustomerProfilePage() {
     );
   }
 
-  console.log(user);
-
   return (
     <div className="container mx-auto max-w-3xl p-6 h-[80vh]">
       <Card className="shadow-xl rounded-2xl">

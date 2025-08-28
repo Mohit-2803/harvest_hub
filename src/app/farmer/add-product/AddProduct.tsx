@@ -55,7 +55,7 @@ export default function AddProductForm() {
   };
 
   return (
-    <Card className="max-w-lg mx-auto mt-10 shadow-lg">
+    <Card className="max-w-lg mx-auto my-10 shadow-lg">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Add New Product</CardTitle>
       </CardHeader>

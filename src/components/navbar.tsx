@@ -1,3 +1,4 @@
+// components/layout/Navbar.tsx (your file)
 "use client";
 
 import * as React from "react";
@@ -16,27 +17,35 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getCartCount } from "@/app/actions/cart-actions/actions";
+import { ShoppingCart } from "lucide-react";
+import { useCartCount } from "@/app/context/CartProvider";
 
 function NavLink({
   href,
   label,
   active,
+  trailing,
 }: {
   href: string;
   label: string;
   active: boolean;
+  trailing?: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
       className={cn(
-        "px-3 py-2 text-md font-medium rounded-md transition block",
+        "relative px-3 py-2 text-md font-medium rounded-md transition block",
         active
           ? "text-green-700 bg-green-200"
           : "text-muted-foreground hover:text-green-700 hover:bg-green-100"
       )}
     >
-      {label}
+      <span className="inline-flex items-center gap-2">
+        {label}
+        {trailing}
+      </span>
     </Link>
   );
 }
@@ -46,6 +55,7 @@ export function Navbar() {
   const router = useRouter();
   const { user, isLoading, logout } = useAuth();
   const [open, setOpen] = React.useState(false);
+  const { cartCount, setCartCount } = useCartCount();
 
   const baseItems = [
     { href: "/", label: "Home" },
@@ -59,6 +69,30 @@ export function Navbar() {
       ? [...baseItems, { href: "/admin", label: "Admin" }]
       : baseItems;
 
+  // Fetch cart count only when authenticated
+  React.useEffect(() => {
+    let active = true;
+    async function load() {
+      if (!user) {
+        setCartCount(0);
+        return;
+      }
+      try {
+        const count = await getCartCount();
+        if (active) setCartCount(count);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (e) {
+        if (active) setCartCount(0);
+        // Optionally log or toast
+        // console.error(e);
+      }
+    }
+    load();
+    return () => {
+      active = false;
+    };
+  }, [setCartCount, user]);
+
   const AuthButtons = ({ mobile }: { mobile?: boolean }) => {
     if (isLoading)
       return <div className="h-9 w-24 animate-pulse rounded-md bg-gray-200" />;
@@ -66,6 +100,26 @@ export function Navbar() {
     if (user) {
       return (
         <>
+          <Link
+            href="/customer/cart"
+            onClick={() => mobile && setOpen(false)}
+            className={cn(
+              "relative inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-green-700 hover:bg-green-50",
+              mobile && "w-full justify-between"
+            )}
+            aria-label="Open cart"
+          >
+            <span>
+              <ShoppingCart />
+            </span>
+            {cartCount > 0 && (
+              <span className="inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-green-600 px-2 text-xs font-semibold text-white">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+
+          {/* Profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 focus:outline-none cursor-pointer">
@@ -118,6 +172,7 @@ export function Navbar() {
       );
     }
 
+    // Not logged in
     return (
       <>
         <Link href="/login" onClick={() => mobile && setOpen(false)}>
@@ -169,6 +224,14 @@ export function Navbar() {
               active={
                 pathname === item.href ||
                 (item.href !== "/" && pathname?.startsWith(item.href))
+              }
+              trailing={
+                // Add a small badge on the Marketplace link if desired
+                item.href === "/cart" && user && cartCount > 0 ? (
+                  <span className="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-semibold text-white">
+                    {cartCount}
+                  </span>
+                ) : undefined
               }
             />
           ))}
@@ -226,6 +289,23 @@ export function Navbar() {
                   }
                 />
               ))}
+
+              {/* Mobile Cart (only when logged in) */}
+              {user && (
+                <Link
+                  href="/cart"
+                  onClick={() => setOpen(false)}
+                  className="mt-2 inline-flex w-full items-center justify-between rounded-md border px-3 py-2 text-green-700 hover:bg-green-50"
+                >
+                  <span>Cart</span>
+                  {cartCount > 0 && (
+                    <span className="inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-green-600 px-2 text-xs font-semibold text-white">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               <div className="pt-2 border-t mt-2 flex flex-col gap-2">
                 <AuthButtons mobile />
               </div>
