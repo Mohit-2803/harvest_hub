@@ -10,7 +10,7 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "randomuser.me",
-        pathname: "/api/portraits/**",
+        pathname: "/api/**",
       },
     ],
   },
@@ -23,4 +23,5 @@ const nextConfig = {
     },
   },
 };
+
 export default nextConfig;
