@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import stripe from "@/lib/stripe";
 import prisma from "@/lib/prisma";
+import UpdateCartContextForWebhook from "./updateCartContext";
 
 // This webhook is called by Stripe when an event occurs
 export const runtime = "nodejs";
@@ -55,10 +56,12 @@ export async function POST(req: Request) {
           }
         }
 
-        // Clear cart items for the user
+        // Clear cart items for the user and also cart count from context
         await tx.cartItem.deleteMany({
           where: { cart: { userId: orderWithItems?.customerId ?? "" } },
         });
+
+        UpdateCartContextForWebhook();
       });
     }
 
