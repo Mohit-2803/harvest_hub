@@ -130,6 +130,7 @@ exports.Prisma.UserScalarFieldEnum = {
   role: 'role',
   farmName: 'farmName',
   farmLocation: 'farmLocation',
+  profileSetupCompleted: 'profileSetupCompleted',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

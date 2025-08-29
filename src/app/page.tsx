@@ -6,9 +6,46 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Spinner from "@/components/Spinner";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const [showRoleSetupBanner, setShowRoleSetupBanner] = useState(false);
+
+  // Check if OAuth user needs role setup - database-based approach
+  useEffect(() => {
+    if (user && user.role === "CUSTOMER") {
+      // Fetch profile setup status from database
+      const checkProfileStatus = async () => {
+        try {
+          const response = await fetch("/api/auth/profile-status");
+          if (response.ok) {
+            const data = await response.json();
+
+            // Show banner if profile setup is not completed
+            if (
+              data.needsSetup &&
+              !sessionStorage.getItem(`setup_banner_shown_${user.id}`)
+            ) {
+              setShowRoleSetupBanner(true);
+              // Mark that we've shown the banner in this session
+              sessionStorage.setItem(`setup_banner_shown_${user.id}`, "true");
+            }
+          }
+        } catch (error) {
+          console.error("Failed to check profile status:", error);
+        }
+      };
+
+      checkProfileStatus();
+    }
+  }, [user]);
+
+  const handleCompleteProfile = () => {
+    router.push("/setup-role");
+  };
 
   if (isLoading) {
     return (
@@ -20,6 +57,54 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100">
+      {/* Role Setup Banner for OAuth Users */}
+      {showRoleSetupBanner && (
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">👋</span>
+              <div>
+                <p className="font-medium">
+                  Complete your profile to get the full Harvest Hub experience!
+                </p>
+                <p className="text-sm opacity-90">
+                  Are you a farmer looking to sell, or a buyer looking to
+                  purchase?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleCompleteProfile}
+                variant="secondary"
+                size="sm"
+                className="text-purple-700 hover:text-purple-800"
+              >
+                Complete Profile
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowRoleSetupBanner(false);
+                  // Mark that user dismissed the banner (not permanently, just for this session)
+                  if (user?.id) {
+                    // Use session dismissal - will show again on next visit unless they complete setup
+                    localStorage.setItem(
+                      `profile_banner_dismissed_${user.id}`,
+                      "session"
+                    );
+                  }
+                }}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/20"
+              >
+                Later
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center text-center py-20 px-6">
         <motion.h1
@@ -71,7 +156,7 @@ export default function HomePage() {
                   </Link>
                 </>
               ) : (
-                <Link href="/dashboard">
+                <Link href={`/${user.role.toLowerCase()}/dashboard`}>
                   <Button
                     size="lg"
                     variant="secondary"

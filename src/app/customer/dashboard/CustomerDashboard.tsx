@@ -1,5 +1,5 @@
+// app/customer/dashboard/page.tsx  (or wherever your route file sits)
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ShoppingCart, ListOrdered, ArrowRight, MapPin } from "lucide-react";
 import Link from "next/link";
 import { getLatestAddedFarmProducts } from "@/app/actions/customer-actions/actions";
@@ -7,11 +7,34 @@ import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { AddToCartButton } from "../marketplace/AddToCartButton";
+import { Decimal } from "@/prisma/generated/prisma/runtime/library";
+
+interface Product {
+  id: string;
+  name: string;
+  image: string | null;
+  price: Decimal;
+  description: string | null;
+  farmer: {
+    name: string | null;
+    id: string;
+    email: string;
+    farmName: string | null;
+    farmLocation: string | null;
+  };
+}
 
 export default async function CustomerDashboard() {
   const session = await getServerSession(authOptions);
-  const customerName = session?.user?.name || "Customer";
-  const products = await getLatestAddedFarmProducts();
+  const customerName =
+    typeof session?.user?.name === "string" && session.user.name.trim() !== ""
+      ? session.user.name
+      : "Customer";
+
+  // Guard against undefined/null responses from the API
+  const productsRaw = await getLatestAddedFarmProducts();
+  const products = Array.isArray(productsRaw) ? productsRaw : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -116,23 +139,21 @@ export default async function CustomerDashboard() {
             </p>
           ) : (
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product) => {
-                const price =
-                  typeof product.price === "number"
-                    ? product.price
-                    : Number(product.price);
-                const farmerName = product.farmer?.farmName ?? "—";
-                const farmerLoc = product.farmer?.farmLocation ?? "";
+              {products.map((product: Product) => {
+                const price = Number(product?.price ?? 0);
+                const farmerName = product?.farmer?.farmName ?? "—";
+                const farmerLoc = product?.farmer?.farmLocation ?? "";
+
                 return (
                   <Card
-                    key={product.id}
+                    key={product?.id ?? Math.random().toString(36).slice(2)}
                     className="group rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition"
                   >
                     <CardContent className="p-0">
                       <div className="relative h-44 w-full overflow-hidden">
                         <Image
-                          src={product.image || "/file.svg"}
-                          alt={product.name}
+                          src={product?.image || "/file.svg"}
+                          alt={product?.name ?? "Product image"}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                           sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 100vw"
@@ -142,7 +163,7 @@ export default async function CustomerDashboard() {
                           <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-gray-900 shadow-sm">
                             {farmerName}
                             {farmerLoc && (
-                              <span className="inline-flex items-center gap-1 text-gray-500">
+                              <span className="inline-flex items-center gap-1 text-gray-500 ml-2">
                                 <MapPin className="h-3 w-3" />
                                 {farmerLoc}
                               </span>
@@ -153,10 +174,10 @@ export default async function CustomerDashboard() {
 
                       <div className="p-4">
                         <h3 className="line-clamp-1 text-base font-semibold text-gray-900">
-                          {product.name}
+                          {product?.name ?? "Untitled product"}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-                          {product.description ||
+                          {product?.description ||
                             "Freshly sourced from local farms."}
                         </p>
                         <div className="mt-3 flex items-center justify-between">
@@ -165,32 +186,22 @@ export default async function CustomerDashboard() {
                               {formatCurrency(price)}
                             </span>
                             <span className="text-sm font-medium text-red-400 line-through">
-                              {formatCurrency(Number(price) * 1.2)}
+                              {formatCurrency(price * 1.2)}
                             </span>
                           </div>
                           <Link
-                            href={`/customer/marketplace/products/${product.id}`}
+                            href={`/customer/marketplace/products/${product?.id}`}
                             className="text-sm font-medium text-emerald-700 hover:text-emerald-800"
                           >
                             Details →
                           </Link>
                         </div>
 
-                        {/* Server-action friendly Add to Cart form */}
-                        <form action="/customer/cart/add" className="mt-3">
-                          <input
-                            type="hidden"
-                            name="productId"
-                            value={product.id}
-                          />
-                          <Button
-                            type="submit"
-                            className="w-full cursor-pointer inline-flex items-center gap-2"
-                          >
-                            <ShoppingCart className="h-4 w-4" />
-                            Add to Cart
-                          </Button>
-                        </form>
+                        {/* Client-side add-to-cart button (updates cart count & toasts) */}
+                        <div className="mt-3">
+                          {/* AddToCartButton is a client component that handles addToCart and cart count */}
+                          <AddToCartButton productId={String(product?.id)} />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

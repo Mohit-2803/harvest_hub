@@ -6,6 +6,7 @@ import { ShoppingCart } from "lucide-react";
 import { addToCart } from "@/app/actions/cart-actions/actions";
 import { toast } from "sonner";
 import { useCartCount } from "@/app/context/CartProvider";
+import { Button } from "@/components/ui/button";
 
 export function AddToCartButton({ productId }: { productId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -25,15 +26,15 @@ export function AddToCartButton({ productId }: { productId: string }) {
   };
 
   return (
-    <button
+    <Button
       type="button"
       onClick={handleAddToCart}
       disabled={isPending}
       aria-label="Add item to cart"
-      className="mt-4 w-full inline-flex cursor-pointer items-center justify-center gap-2 rounded-md py-2 bg-green-600 font-medium text-white hover:bg-green-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+      className="mt-4 w-full inline-flex cursor-pointer items-center justify-center gap-2 rounded-md py-2 font-medium text-white hover:bg-green-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <ShoppingCart size={18} />
       {isPending ? "Adding..." : "Add to Cart"}
-    </button>
+    </Button>
   );
 }

@@ -112,9 +112,65 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async redirect({ url, baseUrl }) {
+      // Handle OAuth users who need role selection
+      if (url.includes("/setup-role")) {
+        return url;
+      }
+
+      // Default redirect
       return baseUrl;
+    },
+
+    async signIn({ user, account }) {
+      // For OAuth providers, we need to handle new vs returning users
+      if (account?.provider === "google") {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+            select: {
+              id: true,
+              role: true,
+              farmName: true,
+              farmLocation: true,
+              createdAt: true,
+            },
+          });
+
+          // If this is a completely new user (first OAuth login)
+          if (!existingUser) {
+            logger.info(
+              "New OAuth user detected, will redirect to role setup",
+              {
+                email: user.email,
+                provider: account.provider,
+                action: "new_oauth_user",
+              }
+            );
+            // The user will be created by Prisma adapter,
+            // but we'll catch them in the redirect callback
+            return true;
+          }
+
+          // Existing user - check if they need role setup
+          const userNeedsRoleSetup =
+            existingUser.role === "CUSTOMER" &&
+            !existingUser.farmName &&
+            !existingUser.farmLocation;
+
+          if (userNeedsRoleSetup) {
+            logger.info("OAuth user needs role setup", {
+              userId: existingUser.id,
+              email: user.email,
+              action: "oauth_role_setup_needed",
+            });
+          }
+        } catch (error) {
+          logger.error("Error checking user role during OAuth sign in", error);
+        }
+      }
+
+      return true;
     },
   },
 };

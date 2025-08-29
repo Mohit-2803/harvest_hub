@@ -19,6 +19,7 @@ model User {
   role          Role      @default(CUSTOMER)
   farmName      String?
   farmLocation  String?
+  profileSetupCompleted Boolean @default(false)
 
   accounts Account[]
   sessions Session[]

@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
         role,
         farmName,
         farmLocation,
+        profileSetupCompleted: true, // Manual registration completes profile setup
       },
       select: {
         id: true,
@@ -78,14 +79,19 @@ export async function POST(request: NextRequest) {
         role: true,
         farmName: true,
         farmLocation: true,
+        profileSetupCompleted: true,
       },
     });
 
     logger.auth.registerAttempt(email, role, true, { userId: user.id });
     
+    // Mark this as a manual registration for OAuth distinction
+    // This helps us identify OAuth users who need role setup
+    
     return NextResponse.json({
       ...user,
-      message: "User registered successfully"
+      message: "User registered successfully",
+      registrationType: "manual"
     });
   } catch (error) {
     logger.auth.registerAttempt(email, 'unknown', false, { 

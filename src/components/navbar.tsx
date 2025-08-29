@@ -83,9 +83,9 @@ export function Navbar() {
         if (active) setCartCount(count);
       } catch (error) {
         if (active) setCartCount(0);
-        logger.error('Failed to fetch cart count', error, {
+        logger.error("Failed to fetch cart count", error, {
           userId: user?.id,
-          action: 'navbar_cart_fetch'
+          action: "navbar_cart_fetch",
         });
       }
     }
@@ -107,7 +107,7 @@ export function Navbar() {
             onClick={() => mobile && setOpen(false)}
             className={cn(
               "relative inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-green-700 hover:bg-green-50",
-              mobile && "w-full justify-between"
+              mobile && "w-14 justify-between"
             )}
             aria-label="Open cart"
           >
@@ -293,7 +293,7 @@ export function Navbar() {
               ))}
 
               {/* Mobile Cart (only when logged in) */}
-              {user && (
+              {/* {user && (
                 <Link
                   href="/customer/cart"
                   onClick={() => setOpen(false)}
@@ -306,7 +306,7 @@ export function Navbar() {
                     </span>
                   )}
                 </Link>
-              )}
+              )} */}
 
               <div className="pt-2 border-t mt-2 flex flex-col gap-2">
                 <AuthButtons mobile />

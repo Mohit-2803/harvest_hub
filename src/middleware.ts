@@ -9,6 +9,7 @@ const publicRoutes = [
   "/customer/marketplace",
   "/login",
   "/register",
+  "/setup-role",
   "/api/auth",
 ];
 
