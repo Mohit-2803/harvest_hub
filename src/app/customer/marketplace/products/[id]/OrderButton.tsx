@@ -13,7 +13,7 @@ export default function OrderButton(props: {
 
   return (
     <>
-      <Button className="mt-6" onClick={() => setOpen(true)}>
+      <Button className="mt-4" onClick={() => setOpen(true)}>
         Order Now
       </Button>
       <OrderModal
