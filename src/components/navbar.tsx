@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getCartCount } from "@/app/actions/cart-actions/actions";
 import { ShoppingCart } from "lucide-react";
 import { useCartCount } from "@/app/context/CartProvider";
+import { logger } from "@/lib/logger";
 
 function NavLink({
   href,
@@ -80,11 +81,12 @@ export function Navbar() {
       try {
         const count = await getCartCount();
         if (active) setCartCount(count);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (e) {
+      } catch (error) {
         if (active) setCartCount(0);
-        // Optionally log or toast
-        // console.error(e);
+        logger.error('Failed to fetch cart count', error, {
+          userId: user?.id,
+          action: 'navbar_cart_fetch'
+        });
       }
     }
     load();
@@ -293,7 +295,7 @@ export function Navbar() {
               {/* Mobile Cart (only when logged in) */}
               {user && (
                 <Link
-                  href="/cart"
+                  href="/customer/cart"
                   onClick={() => setOpen(false)}
                   className="mt-2 inline-flex w-full items-center justify-between rounded-md border px-3 py-2 text-green-700 hover:bg-green-50"
                 >

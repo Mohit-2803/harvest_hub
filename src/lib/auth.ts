@@ -4,7 +4,8 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthOptions } from "next-auth";
-import { PrismaClient, User } from "@/prisma/generated/prisma";
+import { PrismaClient } from "@/prisma/generated/prisma";
+import { logger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
 
@@ -26,24 +27,63 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        try {
+          // Validate credentials
+          if (!credentials?.email || !credentials?.password) {
+            logger.auth.loginAttempt("unknown", false, {
+              reason: "missing_credentials",
+            });
+            return null;
+          }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+          // Sanitize email
+          const email = credentials.email.toLowerCase().trim();
 
-        if (!user || !user.password) return null;
+          // Find user in database
+          logger.database.query("findUnique", "User", { email });
+          const user = await prisma.user.findUnique({
+            where: { email },
+          });
 
-        const ok = await bcrypt.compare(credentials.password, user.password);
-        if (!ok) return null;
+          if (!user || !user.password) {
+            logger.auth.loginAttempt(email, false, {
+              reason: "user_not_found_or_no_password",
+            });
+            return null;
+          }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: (user as User).image ?? null,
-          role: (user as User).role ?? "CUSTOMER",
-        };
+          // Verify password
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+          if (!isPasswordValid) {
+            logger.auth.loginAttempt(email, false, {
+              reason: "invalid_password",
+              userId: user.id,
+            });
+            return null;
+          }
+
+          // Successful login
+          logger.auth.loginAttempt(email, true, {
+            userId: user.id,
+            role: user.role,
+          });
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image ?? null,
+            role: user.role,
+          };
+        } catch (error) {
+          logger.database.error("authorize", "User", error, {
+            email: credentials?.email || "unknown",
+          });
+          return null;
+        }
       },
     }),
   ],
@@ -51,11 +91,11 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = (user as User).id;
-        token.role = (user as User).role;
+        token.id = user.id;
+        token.role = user.role as "FARMER" | "CUSTOMER" | "ADMIN";
         token.name = user.name;
         token.email = user.email;
-        token.image = (user as User).image ?? null;
+        token.image = user.image;
       }
 
       return token;
@@ -63,13 +103,11 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.name = (token.name as string) ?? session.user.name ?? null;
-        session.user.email =
-          (token.email as string) ?? session.user.email ?? null;
-        session.user.image =
-          (token.image as string) ?? session.user.image ?? null;
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.image = token.image;
       }
       return session;
     },
@@ -82,4 +120,3 @@ export const authOptions: NextAuthOptions = {
 };
 
 export default NextAuth(authOptions);
-  

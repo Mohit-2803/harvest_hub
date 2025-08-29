@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as z from "zod";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { logger } from "@/lib/logger";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -15,12 +16,18 @@ const registerSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  console.log("Registering user", request.body);
+  let email = 'unknown';
+  
   try {
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
+      logger.warn('Registration validation failed', {
+        issues: parsed.error.format(),
+        action: 'register_validation_failed'
+      });
+      
       return NextResponse.json(
         {
           error: "validation failed",
@@ -30,22 +37,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, password, role, farmName, farmLocation } = parsed.data;
+    const { name, email: userEmail, password, role, farmName, farmLocation } = parsed.data;
+    email = userEmail.toLowerCase().trim(); // Set for logging and sanitize
 
-    // check if user already exists
+    // Check if user already exists
+    logger.database.query('findUnique', 'User', { email });
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
+      logger.auth.registerAttempt(email, role, false, { 
+        reason: 'user_already_exists' 
+      });
+      
       return NextResponse.json(
         { error: "User already exists" },
         { status: 409 }
       );
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create user
+    logger.database.query('create', 'User', { email, role });
     const user = await prisma.user.create({
       data: {
         name,
@@ -65,9 +81,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(user);
+    logger.auth.registerAttempt(email, role, true, { userId: user.id });
+    
+    return NextResponse.json({
+      ...user,
+      message: "User registered successfully"
+    });
   } catch (error) {
-    console.error("Register error", error);
+    logger.auth.registerAttempt(email, 'unknown', false, { 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    });
+    
+    logger.error("Registration failed", error, { email });
+    
     return NextResponse.json(
       { error: "Something went wrong, internal server error" },
       { status: 500 }

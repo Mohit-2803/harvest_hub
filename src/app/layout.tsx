@@ -7,6 +7,7 @@ import "./globals.css";
 import Footer from "@/components/footer";
 import { CartCountProvider } from "./context/CartProvider";
 import { Analytics } from "@vercel/analytics/next";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,20 +37,24 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <CartCountProvider>
-            <Navbar />
-            {children}
-            <Footer />
-            <Toaster
-              position="top-right"
-              richColors
-              closeButton
-              duration={3500}
-            />
-            <Analytics />
-          </CartCountProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <CartCountProvider>
+              <Navbar />
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+              <Footer />
+              <Toaster
+                position="top-right"
+                richColors
+                closeButton
+                duration={3500}
+              />
+              <Analytics />
+            </CartCountProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
