@@ -28,18 +28,20 @@ export default async function CustomerOrdersPage() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl p-6 min-h-screen">
+    <div className="mx-auto max-w-5xl p-4 sm:p-6 min-h-screen">
+      {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
           My Orders
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           Track status, view items, and manage orders.
         </p>
       </div>
 
+      {/* No orders */}
       {orders.length === 0 && (
-        <div className="rounded-xl border font-semibold bg-white p-10 text-center text-gray-500 shadow-sm">
+        <div className="rounded-xl border font-semibold bg-white p-8 sm:p-10 text-center text-gray-500 shadow-sm">
           <p>No orders found.</p>
           <Link href="/customer/marketplace">
             <Button variant="outline" className="mt-4 cursor-pointer">
@@ -49,6 +51,7 @@ export default async function CustomerOrdersPage() {
         </div>
       )}
 
+      {/* Orders list */}
       <div className="space-y-6">
         {orders.map((order) => {
           const created = order.createdAt.toLocaleDateString();
@@ -86,19 +89,23 @@ export default async function CustomerOrdersPage() {
           return (
             <Card
               key={order.id}
-              className="overflow-hidden shadow-md hover:shadow-lg transition-all"
+              className="overflow-hidden shadow-sm hover:shadow-md transition-all"
             >
-              <CardHeader className="flex flex-row items-center justify-between gap-3">
-                <CardTitle className="text-base font-semibold text-gray-900">
+              {/* Header */}
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                <CardTitle className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                   <span className="text-gray-500">Order ID -</span> #{order.id}
                 </CardTitle>
-                <Badge className={statusClass}>{statusLabel}</Badge>
+                <Badge className={`${statusClass} w-fit text-xs sm:text-sm`}>
+                  {statusLabel}
+                </Badge>
               </CardHeader>
 
-              <CardContent className="space-y-5 pt-4">
+              {/* Content */}
+              <CardContent className="space-y-5 pt-2 sm:pt-4">
                 {/* Order Summary */}
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <div className="rounded-lg bg-gray-100 p-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg bg-gray-50 p-3">
                     <p className="text-xs font-medium text-gray-500">
                       Placed On
                     </p>
@@ -106,13 +113,13 @@ export default async function CustomerOrdersPage() {
                       {created}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-gray-100 p-3">
+                  <div className="rounded-lg bg-gray-50 p-3">
                     <p className="text-xs font-medium text-gray-500">Total</p>
                     <p className="text-sm font-semibold text-gray-900">
                       ₹{totalStr}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-gray-100 p-3">
+                  <div className="rounded-lg bg-gray-50 p-3">
                     <p className="text-xs font-medium text-gray-500">Items</p>
                     <p className="text-sm font-medium text-gray-800">
                       {order.orderItems.length}
@@ -120,15 +127,15 @@ export default async function CustomerOrdersPage() {
                   </div>
                 </div>
 
-                {/* Items */}
+                {/* Order Items */}
                 <div className="rounded-lg border divide-y">
                   {order.orderItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-4"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border">
+                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-md border bg-gray-50">
                           <Image
                             src={item.product.image || "/placeholder.png"}
                             alt={item.product.name}
@@ -137,8 +144,11 @@ export default async function CustomerOrdersPage() {
                             className="object-cover"
                           />
                         </div>
-                        <div>
-                          <p className="truncate text-sm font-medium text-gray-900">
+                        <div className="min-w-0">
+                          <p
+                            className="truncate text-sm font-medium text-gray-900"
+                            title={item.product.name}
+                          >
                             {item.product.name}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -154,11 +164,12 @@ export default async function CustomerOrdersPage() {
                 </div>
 
                 {/* Cancel Button */}
-                {order.status !== "DELIVERED" && (
-                  <div className="flex justify-end">
-                    <CancelOrderButton orderId={order.id} />
-                  </div>
-                )}
+                {order.status !== "DELIVERED" &&
+                  order.status !== "CANCELLED" && (
+                    <div className="flex justify-end">
+                      <CancelOrderButton orderId={order.id} />
+                    </div>
+                  )}
               </CardContent>
             </Card>
           );

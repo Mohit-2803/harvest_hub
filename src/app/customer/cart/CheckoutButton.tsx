@@ -35,7 +35,7 @@ export function CheckoutButton({
       disabled={isPending || items.length === 0}
       className="cursor-pointer mt-6 inline-flex w-full items-center justify-center rounded-md bg-indigo-600 py-3 font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
     >
-      {isPending ? "Redirecting..." : "Proceed to Checkout"}
+      {isPending ? "Redirecting..." : "Pay Securely"}
     </button>
   );
 }
